@@ -1,4 +1,4 @@
-version: '3.0'
+version: '3.8'
 
 services:
   panel:
@@ -11,13 +11,60 @@ services:
     volumes:
       - ./sql:/var/lib/mysql
       - ./panel:/var/www/pterodactyl
+    networks:
+      - pterodactyl
+
+  docker:
+    image: docker:dind
+    volumes:
+      - ./docker:/var/lib/docker
+      - docker-certs-ca:/certs
+      - docker-certs-client:/certs/client
+    privileged: true
+    command: --storage-driver overlay2 --tls=false --tlsverify=false
+    networks:
+      - pterodactyl
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+
   wings:
     image: ghcr.io/redstonewizard08/pterodocker/wings:main
     depends_on:
       - panel
+      - docker
     volumes:
-      - ./docker:/var/lib/docker
       - ./config:/etc/pterodactyl
+      - docker-certs-client:/certs/client:ro
+    links:
+      - panel
+      - docker
+    environment:
+      - DOCKER_HOST=tcp://docker:2376
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_CERTDIR=/certs
+      - DOCKER_TLS_VERIFY=1
+    restart: unless-stopped
+    networks:
+      - pterodactyl
     ports:
       - 2028:2028
       - 8088:8088
+
+  dockerclient:
+    image: docker
+    environment:
+      DOCKER_TLS_CERTDIR: /certs
+    command: [sh, -c, "while sleep 1; do :; done"]
+    networks:
+      - pterodactyl
+    depends_on:
+      - docker
+    volumes:
+      - docker-certs-client:/certs/client:ro
+
+volumes:
+  docker-certs-ca:
+  docker-certs-client:
+
+networks:
+  pterodactyl:

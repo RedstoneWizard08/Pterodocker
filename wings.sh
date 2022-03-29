@@ -9,9 +9,11 @@ while [ ! -f /etc/pterodactyl/config.yml ]; do
     sleep 5
 done
 
-echo "Configuration found. Starting Docker daemon..."
+echo "Configuration found. Waiting for Docker..."
 
-service docker start
+while [[ ! "$(curl https://docker:2376 -k 2> /dev/null)" ]]; do
+    sleep 1
+done
 
 echo "Starting Wings..."
 
