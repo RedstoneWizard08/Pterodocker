@@ -3,10 +3,23 @@
 # Go into pterodactyl directory
 cd /var/www/pterodactyl || exit
 
+echo "Waiting for MariaDB..."
+
+if [ -z "${DB_HOST}" ]; then
+    export DB_HOST="mariadb"
+fi
+
+if [ -z "${DB_PORT}" ]; then
+    export DB_PORT="3306"
+fi
+
+while [ ! "$(mysql -u root -h ${DB_HOST} -p ${DB_PORT} -e "")" ]; do
+    sleep 1
+done
+
 echo "Starting services..."
 
 # Start services
-service redis-server start
 service php8.0-fpm start
 
 # Do stuff on first run
@@ -30,14 +43,6 @@ if [ ! -f "/var/www/pterodactyl/.firstrun" ]; then
 
     # Configure pterodactyl
     mysql -u root -e "CREATE DATABASE panel;" > /dev/null 2>&1
-
-    if [ -z "${DB_HOST}" ]; then
-        export DB_HOST="mariadb"
-    fi
-
-    if [ -z "${DB_PORT}" ]; then
-        export DB_PORT="3306"
-    fi
 
     if [ -n "$DB_PASSWORD" ] && [ -z "$DB_USER" ]; then
         mysql -u root -e "CREATE USER 'pterodactyl'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';" > /dev/null 2>&1

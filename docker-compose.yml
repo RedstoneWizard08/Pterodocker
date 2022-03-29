@@ -8,6 +8,8 @@ services:
     restart: unless-stopped
     networks:
       - pterodactyl
+    environment:
+      - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=yes
   
   redis:
     image: redis:6.2
@@ -27,6 +29,9 @@ services:
     networks:
       - pterodactyl
     restart: unless-stopped
+    depends_on:
+      - mariadb
+      - redis
 
   docker:
     image: docker:dind
