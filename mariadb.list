@@ -1,0 +1,5 @@
+deb https://dlm.mariadb.com/repo/mariadb-server/10.7/repo/ubuntu focal main
+deb https://dlm.mariadb.com/repo/mariadb-server/10.7/repo/ubuntu focal main/debug
+
+deb-src https://dlm.mariadb.com/repo/mariadb-server/10.7/repo/ubuntu focal main
+deb-src https://dlm.mariadb.com/repo/mariadb-server/10.7/repo/ubuntu focal main/debug
