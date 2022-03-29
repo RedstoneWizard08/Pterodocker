@@ -1,0 +1,52 @@
+# Base OS
+FROM ubuntu:focal
+
+# Environment variables
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=US/Pacific \
+    LC_ALL=C.UTF-8
+
+# Update system
+RUN apt-get update && \
+    apt-get -y upgrade
+
+# Install base dependencies
+RUN apt-get -y install software-properties-common \
+    curl apt-transport-https ca-certificates gnupg \
+    tar wget unzip zip apt dpkg sudo bash dash \
+    lsb-release lsb-core
+
+# Use bash
+SHELL [ "/bin/bash", "-c" ]
+
+# Add repositories
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor \
+    -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
+    https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee \
+    /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && \
+    apt-get -y upgrade
+
+# Install Docker
+RUN apt-get -y install docker-ce-cli docker-ce containerd.io
+
+# Setup wings
+RUN mkdir -p /etc/pterodactyl && \
+    export ARCH="$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")" && \
+    curl -fsSLo /usr/local/bin/wings \
+    "https://github.com/pterodactyl/wings/releases/latest/download/wings_linux_${ARCH}" && \
+    chmod u+x /usr/local/bin/wings
+COPY wings.service /etc/systemd/system/wings.service
+
+# Add init script
+COPY wings.sh /wings.sh
+RUN chmod a+rx /wings.sh
+
+# Volumes
+VOLUME [ "/etc/pterodactyl" ]
+VOLUME [ "/var/lib/docker" ]
+
+# Start
+CMD [ "/bin/bash", "/wings.sh" ]
