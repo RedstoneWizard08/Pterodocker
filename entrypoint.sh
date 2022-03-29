@@ -11,12 +11,6 @@ if [[ ! "$(ls -A /var/lib/mysql)" ]]; then
     mysql -u root -e "GRANT ALL PRIVILEGES ON panel.* TO 'pterodactyl'@'127.0.0.1' WITH GRANT OPTION;"
 fi
 
-# Copy panel files
-if [[ ! -d "/var/www/pterodactyl" ]]; then
-    echo "Copying files to server..."
-    cp -r /tmp/pterodactyl/* /tmp/pterodactyl/.* /var/www/pterodactyl || true
-fi
-
 # Go into pterodactyl directory
 cd /var/www/pterodactyl || exit
 
@@ -31,6 +25,10 @@ service php8.0-fpm start
 if [ ! -f "/var/lib/mysql/.firstrun" ]; then
 
     echo "First run detected. Generating initial configuration files..."
+
+    # Copy files
+    echo "Copying files to server..."
+    cp -r /tmp/pterodactyl/* /tmp/pterodactyl/.* /var/www/pterodactyl || true > /dev/null 2>&1
 
     # Copy default config
     cp .env.example .env
