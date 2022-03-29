@@ -71,8 +71,12 @@ RUN chmod a+rx /docker-entrypoint.sh
 RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
     ln -sf /dev/stderr /var/log/nginx/error.log
 
+# Copy pterodactyl files
+RUN cp -r /var/www/pterodactyl /tmp/pterodactyl
+
 # Volumes
 VOLUME [ "/var/lib/mysql" ]
+VOLUME [ "/var/www/pterodactyl" ]
 
 # SQL Healthcheck
 HEALTHCHECK --start-period=5m \

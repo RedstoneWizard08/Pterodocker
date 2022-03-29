@@ -10,6 +10,7 @@ services:
       - DB_PASSWORD=pterodactyl
     volumes:
       - ./sql:/var/lib/mysql
+      - ./panel:/var/www/pterodactyl
   wings:
     image: ghcr.io/redstonewizard08/pterodocker/wings:main
     depends_on:

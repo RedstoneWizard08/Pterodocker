@@ -11,6 +11,12 @@ if [[ ! "$(ls -A /var/lib/mysql)" ]]; then
     mysql -u root -e "GRANT ALL PRIVILEGES ON panel.* TO 'pterodactyl'@'127.0.0.1' WITH GRANT OPTION;"
 fi
 
+# Copy panel files
+if [[ ! -d "/var/www/pterodactyl" ]]; then
+    echo "Copying files to server..."
+    cp -r /tmp/pterodactyl/* /tmp/pterodactyl/.* /var/www/pterodactyl || true
+fi
+
 # Go into pterodactyl directory
 cd /var/www/pterodactyl || exit
 
