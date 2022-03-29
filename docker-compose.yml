@@ -2,7 +2,7 @@ version: '3.0'
 
 services:
   panel:
-    image: redstonewizard/pterodactyl-panel
+    image: ghcr.io/pedstonewizard08/pterodocker/panel
     ports:
       - 8086:80
     environment:
@@ -11,12 +11,12 @@ services:
     volumes:
       - ./sql:/var/lib/mysql
   wings:
-    image: redstonewizard/pterodactyl-wings:experimental
+    image: ghcr.io/pedstonewizard08/pterodocker/wings
     depends_on:
       - panel
     volumes:
       - ./docker:/var/lib/docker
-      - ./pteroconfig:/etc/pterodactyl
+      - ./config:/etc/pterodactyl
     ports:
       - 2028:2028
       - 8088:8088
