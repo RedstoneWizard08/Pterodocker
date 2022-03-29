@@ -1,87 +1,3 @@
-# UPX Builder OS
-FROM ubuntu:focal as upx-builder
-
-# Environment variables
-ENV DEBIAN_FRONTEND=noninteractive \
-    TZ=US/Pacific \
-    LC_ALL=C.UTF-8
-
-# Install dependencies
-RUN apt-get update && \
-    apt-get -y upgrade && \
-    apt-get -y install build-essential make cmake \
-    gcc g++ git tzdata libssl-dev apt zlib1g-dev \
-    clang curl bash wget
-
-CMD [ "/bin/bash", "-c" ]
-
-# Download UCL
-RUN mkdir -p /usr/src/ucl && \
-    curl -fsSLo /usr/src/ucl/ucl.tar.gz \
-    http://www.oberhumer.com/opensource/ucl/download/ucl-1.03.tar.gz && \
-    tar -xzf /usr/src/ucl/ucl.tar.gz -C /usr/src/ucl
-WORKDIR /usr/src/ucl/ucl-1.03
-
-# Configure
-RUN export CFLAGS="$CFLAGS -std=c90 -fPIC" && \
-    ./configure --build=$(uname -m)-unknown-linux-gnu
-
-# Build
-RUN make && make install
-
-# Clone repository
-RUN git clone --recursive https://github.com/upx/upx.git /usr/src/upx
-WORKDIR /usr/src/upx
-
-# Build
-RUN make
-
-# Builder OS
-FROM golang:1.17-alpine AS builder
-
-# Environment variables
-ENV DEBIAN_FRONTEND=noninteractive \
-    TZ=US/Pacific \
-    LC_ALL=C.UTF-8
-
-# Install dependencies
-RUN apk update && \
-    apk upgrade && \
-    apk add --update --no-cache git make bash tar xz gnupg \
-        coreutils libc6-compat protobuf gcompat
-
-# Bash
-SHELL [ "/bin/bash", "-c" ]
-
-# Copy UPX
-COPY --from=upx-builder /usr/src/upx/src/upx.out /usr/local/bin/upx
-
-# Clone repository
-RUN git clone --recursive https://github.com/pterodactyl/wings.git /usr/src/wings
-WORKDIR /usr/src/wings
-
-# Download Go dependencies
-RUN go mod download
-
-# Build wings
-RUN export UNAME_ARCH="$(uname -m)" && \
-    case ${UNAME_ARCH} in \
-        aarch64) export ARCH="arm64" ;; \
-        armv7l) export ARCH="arm" ;; \
-        x86_64) export ARCH="amd64" ;; \
-        i686) export ARCH="386" ;; \
-        *) echo "Unknown architecture: ${UNAME_ARCH}" && exit 1 ;; \
-    esac && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build \
-        -ldflags="-s -w -X github.com/pterodactyl/wings/system.Version=docker" \
-        -v \
-        -trimpath \
-        -o wings \
-        wings.go
-    
-# Compress binaries
-RUN upx wings
-
 # Base OS
 FROM ubuntu:focal
 
@@ -115,9 +31,12 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor \
     apt-get -y install docker-ce-cli
 
 # Setup wings
-COPY --from=builder /usr/src/wings/wings /usr/local/bin/wings
 COPY wings.service /etc/systemd/system/wings.service
-RUN chmod a+rx /usr/local/bin/wings
+RUN mkdir -p /etc/pterodactyl && \
+    export ARCH="$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")" && \
+    curl -fsSLo /usr/local/bin/wings \
+    "https://github.com/pterodactyl/wings/releases/latest/download/wings_linux_${ARCH}" && \
+    chmod a+rx /usr/local/bin/wings
 
 # Add init script
 COPY wings.sh /wings.sh
