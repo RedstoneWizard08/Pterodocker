@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  mariadb:
+    image: mariadb:10.7
+    volumes:
+      - ./sql:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - pterodactyl
+  
+  redis:
+    image: redis:6.2
+    restart: unless-stopped
+    networks:
+      - pterodactyl
+
   panel:
     image: ghcr.io/redstonewizard08/pterodocker/panel:main
     ports:
@@ -9,10 +23,10 @@ services:
       - DB_USER=pterodactyl
       - DB_PASSWORD=pterodactyl
     volumes:
-      - ./sql:/var/lib/mysql
       - ./panel:/var/www/pterodactyl
     networks:
       - pterodactyl
+    restart: unless-stopped
 
   docker:
     image: docker:dind
@@ -26,6 +40,7 @@ services:
       - pterodactyl
     environment:
       - DOCKER_TLS_CERTDIR=/certs
+    restart: unless-stopped
 
   wings:
     image: ghcr.io/redstonewizard08/pterodocker/wings:main
@@ -49,18 +64,6 @@ services:
     ports:
       - 2028:2028
       - 8088:8088
-
-  dockerclient:
-    image: docker
-    environment:
-      DOCKER_TLS_CERTDIR: /certs
-    command: [sh, -c, "while sleep 1; do :; done"]
-    networks:
-      - pterodactyl
-    depends_on:
-      - docker
-    volumes:
-      - docker-certs-client:/certs/client:ro
 
 volumes:
   docker-certs-ca:

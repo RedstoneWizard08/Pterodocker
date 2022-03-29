@@ -29,9 +29,8 @@ RUN add-apt-repository -y ppa:ondrej/php && \
 # Install dependencies
 RUN apt-get -y install php8.0 php8.0-cli php8.0-gd php8.0-mysql \
     php8.0-pdo php8.0-mbstring php8.0-tokenizer php8.0-bcmath \
-    php8.0-xml php8.0-fpm php8.0-curl php8.0-zip mariadb-server \
-    nginx tar unzip git redis-server certbot python3-certbot-nginx \
-    cron
+    php8.0-xml php8.0-fpm php8.0-curl php8.0-zip nginx tar unzip \
+    git certbot python3-certbot-nginx cron mariadb-client
 
 # Install composer
 RUN curl -fsSL https://getcomposer.org/installer | php -- \
@@ -43,12 +42,6 @@ WORKDIR /var/www/pterodactyl
 RUN curl -fsSLo panel.tar.gz https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz && \
     tar zxvf panel.tar.gz && \
     chmod -R 755 storage/* bootstrap/cache/
-
-# Setup database
-RUN service mariadb start && \
-    mysql -u root -e "CREATE USER 'pterodactyl'@'127.0.0.1' IDENTIFIED BY 'yourPassword';" && \
-    mysql -u root -e "CREATE DATABASE panel;" && \
-    mysql -u root -e "GRANT ALL PRIVILEGES ON panel.* TO 'pterodactyl'@'127.0.0.1' WITH GRANT OPTION;"
 
 # Install dependencies
 RUN cp .env.example .env && \
@@ -75,12 +68,7 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
 RUN cp -r /var/www/pterodactyl /tmp/pterodactyl
 
 # Volumes
-VOLUME [ "/var/lib/mysql" ]
 VOLUME [ "/var/www/pterodactyl" ]
-
-# SQL Healthcheck
-HEALTHCHECK --start-period=5m \
-  CMD mariadb -e 'SELECT @@datadir;' || exit 1
 
 # Start
 ENTRYPOINT [ "/bin/bash", "/docker-entrypoint.sh" ]

@@ -128,4 +128,4 @@ VOLUME [ "/etc/pterodactyl" ]
 VOLUME [ "/var/lib/docker" ]
 
 # Start
-CMD [ "/bin/bash", "/wings.sh" ]
+ENTRYPOINT [ "/bin/bash", "/wings.sh" ]
