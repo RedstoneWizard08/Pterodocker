@@ -13,7 +13,7 @@ if [ -z "${DB_PORT}" ]; then
     export DB_PORT="3306"
 fi
 
-while [ ! "$(mysql -u root -h ${DB_HOST} -p ${DB_PORT} -e "")" ]; do
+while [ ! "$(mysql -u root -h ${DB_HOST} -P ${DB_PORT} -e "")" ]; do
     sleep 1
 done
 
